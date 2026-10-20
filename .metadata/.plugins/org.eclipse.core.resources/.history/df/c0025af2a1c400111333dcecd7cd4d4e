@@ -1,0 +1,64 @@
+package com.ridesharing.passenger.service;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.ridesharing.passenger.Entity.Passenger;
+import com.ridesharing.passenger.repository.PassengerRepository;
+
+@Service
+public class PassengerService {
+
+	 private final PassengerRepository repository;
+
+	    public PassengerService(PassengerRepository repository) {
+	        this.repository = repository;
+	    }
+
+	    public Passenger registerPassenger( PassengerRequestDTO request) {
+	    	String email = normalizeEmail(request.getEmail());
+
+	        if (repository.existsByEmail(email)) {
+	            throw new DuplicatePassengerException(email);
+	        }
+
+	        Passenger passenger = new Passenger();
+
+	        copyToEntity(request, passenger);
+
+	        Passenger savedPassenger = repository.save(passenger);
+
+	        return convertToDTO(savedPassenger);
+	    }
+
+	    public List<Passenger> getAllPassengers() {
+	        return repository.findAll();
+	    }
+	    
+	 // Get Passenger By ID
+	    public Passenger getPassengerById(Long id) {
+	    	Passenger passenger = findPassenger(id);
+
+	        return convertToDTO(passenger);
+	    }
+
+	    // Update Passenger
+	    public Passenger updatePassenger(Long id, Passenger details) {
+	        Passenger passenger = getPassengerById(id);
+
+	        passenger.setName(details.getName());
+	        passenger.setEmail(details.getEmail());
+	        passenger.setPhone(details.getPhone());
+
+	        return repository.save(passenger);
+	    }
+
+	    // Delete Passenger
+	    public void deletePassenger(Long id) {
+	        Passenger passenger = getPassengerById(id);
+	        repository.delete(passenger);
+	    }
+}

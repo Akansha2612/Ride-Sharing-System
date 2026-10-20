@@ -1,0 +1,5 @@
+package com.ridesharing.passenger.dto;
+
+public class PassengerResponseDTO {
+
+}

@@ -1,0 +1,123 @@
+package com.ridesharing.passenger.service;
+
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.ridesharing.passenger.Entity.Passenger;
+import com.ridesharing.passenger.dto.PassengerRequestDTO;
+import com.ridesharing.passenger.dto.PassengerResponseDTO;
+import com.ridesharing.passenger.repository.PassengerRepository;
+
+@Service
+public class PassengerService {
+
+	 private final PassengerRepository repository;
+
+	    public PassengerService(PassengerRepository repository) {
+	        this.repository = repository;
+	    }
+
+	    public Passenger registerPassenger( PassengerRequestDTO request) {
+	    	String email = normalizeEmail(request.getEmail());
+
+	        if (repository.existsByEmail(email)) {
+	            throw new DuplicatePassengerException(email);
+	        }
+
+	        Passenger passenger = new Passenger();
+
+	        copyToEntity(request, passenger);
+
+	        Passenger savedPassenger = repository.save(passenger);
+
+	        return convertToDTO(savedPassenger);
+	    }
+
+	    public List<Passenger> getAllPassengers( int page, int size) {
+	    	 if (page < 0 || size < 1 || size > 100) {
+	             throw new InvalidPassengerRequestException(
+	                 "Page must be >= 0 and size must be between 1 and 100"
+	             );
+	         }
+
+	         PageRequest pageable = PageRequest.of(
+	             page,
+	             size,
+	             Sort.by("id").ascending()
+	         );
+
+	         return repository.findAll(pageable)
+	                 .map(this::convertToDTO);
+	    }
+	    
+	 // Get Passenger By ID
+	    public Passenger getPassengerById(Long id) {
+	    	Passenger passenger = findPassenger(id);
+
+	        return convertToDTO(passenger);
+	    }
+
+	    // Update Passenger
+	    public Passenger updatePassenger( Long id, PassengerRequestDTO request) {
+	        Passenger passenger = findPassenger(id);
+
+	        String email = normalizeEmail(request.getEmail());
+
+	        if (repository.existsByEmailAndIdNot(email, id)) {
+	            throw new DuplicatePassengerException(email);
+	        }
+
+	        copyToEntity(request, passenger);
+
+	        Passenger updatedPassenger = repository.save(passenger);
+
+	        return convertToDTO(updatedPassenger);
+	    }
+
+	    // Delete Passenger
+	    public void deletePassenger(Long id) {
+	    	 Passenger passenger = findPassenger(id);
+
+	         repository.delete(passenger);
+	    }
+	    
+	    // Helper: Find Passenger Entity
+	    private Passenger findPassenger(Long id) {
+
+	        return repository.findById(id)
+	                .orElseThrow(() ->
+	                    new PassengerNotFoundException(id)
+	                );
+	    }
+	    
+	    // Helper: Normalize Email
+	    private String normalizeEmail(String email) {
+	        return email.trim().toLowerCase(Locale.ROOT);
+	    }
+	    
+	    // Helper: Copy Request DTO To Entity
+	    private void copyToEntity(
+	            PassengerRequestDTO request,
+	            Passenger passenger) {
+
+	        passenger.setName(request.getName().trim());
+	        passenger.setEmail(normalizeEmail(request.getEmail()));
+	        passenger.setPhone(request.getPhone().trim());
+	    }
+	    
+	 // Helper: Convert Entity To Response DTO
+	    private PassengerResponseDTO convertToDTO(Passenger passenger) {
+
+	        return new PassengerResponseDTO(
+	            passenger.getId(),
+	            passenger.getName(),
+	            passenger.getEmail(),
+	            passenger.getPhone()
+	        );
+	    }
+	    
+}

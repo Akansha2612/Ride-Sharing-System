@@ -1,0 +1,16 @@
+package com.ridesharing.ride.repository;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import com.ridesharing.ride.entity.Ride;
+
+@Repository
+public interface RideRepository extends JpaRepository<Ride, Long> {
+
+	Streamable<Order> findByPassengerId(Long passengerId, PageRequest createPageRequest);
+
+}

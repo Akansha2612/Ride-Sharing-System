@@ -1,0 +1,5 @@
+package com.ridesharing.ride.dto;
+
+public class RideResponseDTO {
+
+}

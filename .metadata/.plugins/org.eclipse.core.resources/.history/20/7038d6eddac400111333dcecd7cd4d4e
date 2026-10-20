@@ -1,0 +1,164 @@
+package com.ridesharing.driver.controller;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ridesharing.driver.dto.DriverRequestDTO;
+import com.ridesharing.driver.dto.DriverResponseDTO;
+import com.ridesharing.driver.entity.Driver.AccountStatus;
+import com.ridesharing.driver.entity.Driver.AvailabilityStatus;
+import com.ridesharing.driver.entity.Driver.VerificationStatus;
+import com.ridesharing.driver.service.DriverService;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/v1/drivers")
+public class DriverController {
+	 private final DriverService driverService;
+
+	    public DriverController(DriverService driverService) {
+	        this.driverService = driverService;
+	    }
+
+	    // 1. Register Driver
+	   /* Can be tested with below JSON: 
+	    * {
+		  "name": "Amit Kumar",
+		  "email": "amit.driver@example.com",
+		  "phone": "9876543210",
+		  "licenseNumber": "DL0420260012345",
+		  "latitude": 28.7041,
+		  "longitude": 77.1025
+		}*/
+	    @PostMapping
+	    @ResponseStatus(HttpStatus.CREATED)
+	    public DriverResponseDTO registerDriver(
+	            @Valid @RequestBody DriverRequestDTO request) {
+
+	        return driverService.registerDriver(request);
+	    }
+
+	    // 2. Get All Drivers
+	    @GetMapping
+	    public Page<DriverResponseDTO> getAllDrivers(
+	            @RequestParam(defaultValue = "0") int page,
+	            @RequestParam(defaultValue = "10") int size) {
+
+	        return driverService.getAllDrivers(page, size);
+	    }
+
+	    // 3. Search Drivers
+	    @GetMapping("/search")
+	    public List<DriverResponseDTO> searchDrivers(
+	            @RequestParam(required = false) String email,
+	            @RequestParam(required = false) String phone) {
+
+	        return driverService.searchDrivers(email, phone);
+	    }
+	    
+	    // 4. Get Nearby Drivers
+	    @GetMapping("/nearby")
+	    public List<DriverResponseDTO> getNearbyDrivers(
+	            @RequestParam Double latitude,
+	            @RequestParam Double longitude,
+	            @RequestParam(defaultValue = "5") double radiusKm) {
+
+	        return driverService.nearbyDrivers(
+	            latitude, longitude, radiusKm
+	        );
+	    }
+	    
+	 // 5. Get Driver By ID
+	    @GetMapping("/{id}")
+	    public DriverResponseDTO getDriverById(
+	            @PathVariable Long id) {
+
+	        return driverService.getDriverById(id);
+	    }
+
+	    // 6. Update Driver
+	    @PutMapping("/{id}")
+	    public DriverResponseDTO updateDriver(
+	            @PathVariable Long id,
+	            @Valid @RequestBody DriverRequestDTO request) {
+
+	        return driverService.updateDriver(id, request);
+	    }
+
+	    // 7. Delete Driver
+	    @DeleteMapping("/{id}")
+	    @ResponseStatus(HttpStatus.NO_CONTENT)
+	    public void deleteDriver(@PathVariable Long id) {
+
+	        driverService.deleteDriver(id);
+	    }
+
+	    // 8. Update Driver Location
+	    /*PATCH http://localhost:8082/api/v1/drivers/1/location
+	    {
+		  "latitude": 28.7041,
+		  "longitude": 77.1025   } 
+	    */
+	    @PatchMapping("/{id}/location")
+	    public DriverResponseDTO updateLocation(
+	            @PathVariable Long id,
+	            @RequestBody Map<String, Double> location) {
+
+	        return driverService.updateDriverLocation(
+	            id,
+	            location.get("latitude"),
+	            location.get("longitude")
+	        );
+	    }
+	    
+	 // 9. Update Availability
+	    //PATCH http://localhost:8082/api/v1/drivers/1/availability?status=ONLINE
+	    
+	    @PatchMapping("/{id}/availability")
+	    public DriverResponseDTO updateAvailability(
+	            @PathVariable Long id,
+	            @RequestParam AvailabilityStatus status) {
+
+	        return driverService.updateAvailability(id, status);
+	    }
+
+	    // 10. Update Account Status
+	    // Local development only - secure for admin use.
+	    @PatchMapping("/{id}/account-status")
+	    public DriverResponseDTO updateAccountStatus(
+	            @PathVariable Long id,
+	            @RequestParam AccountStatus status) {
+
+	        return driverService.updateAccountStatus(id, status);
+	    }
+
+	    // 11. Update Verification Status
+	    // Local development only - secure for admin use.
+	  //  PATCH http://localhost:8082/api/v1/drivers/1/verification?status=VERIFIED
+	    	
+	    @PatchMapping("/{id}/verification")
+	    public DriverResponseDTO updateVerification(
+	            @PathVariable Long id,
+	            @RequestParam VerificationStatus status) {
+
+	        return driverService.updateVerification(id, status);
+	    }
+	    
+	    
+}

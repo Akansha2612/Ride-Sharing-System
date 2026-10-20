@@ -1,0 +1,22 @@
+package com.ridesharing.driver.controller;
+
+@RestController
+@RequestMapping("/api/v1/drivers")
+public class DriverController {
+	 private final DriverService driverService;
+
+	    public DriverController(DriverService driverService) {
+	        this.driverService = driverService;
+	    }
+
+	    // 1. Register Driver
+	    @PostMapping
+	    @ResponseStatus(HttpStatus.CREATED)
+	    public DriverResponseDTO registerDriver(
+	            @Valid @RequestBody DriverRequestDTO request) {
+
+	        return driverService.registerDriver(request);
+	    }
+
+	    
+}

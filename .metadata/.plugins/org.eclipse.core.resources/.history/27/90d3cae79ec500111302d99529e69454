@@ -1,0 +1,168 @@
+package com.ridesharing.ride.service;
+
+import java.util.Map;
+
+import javax.naming.ServiceUnavailableException;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+
+import com.ridesharing.ride.dto.RideResponseDTO;
+import com.ridesharing.ride.dto.RideRequestDTO;
+import com.ridesharing.ride.entity.Ride;
+import com.ridesharing.ride.entity.Ride.RideStatus;
+import com.ridesharing.ride.exception.InvalidRideRequestException;
+import com.ridesharing.ride.repository.RideRepository;
+
+import jakarta.validation.Valid;
+
+@Service
+public class RideService {
+
+	private final RideRepository rideRepository;
+	private final PassengerClient passengerClient;
+	
+	 public RideService(RideRepository rideRepository,
+			 RestClient.Builder restClientBuilder,
+			 @Value("${services.passenger.url}") String passengerUrl) {
+	    this.rideRepository = rideRepository;
+	    this.passengerClient = restClientBuilder.clone()
+                .baseUrl(passengerUrl)
+                .build();
+
+	    }
+	 
+	public RideResponseDTO requestRide(@Valid RideRequestDTO request) {
+		// TODO Auto-generated method stub
+		if (request == null) {
+            throw new InvalidRideRequestException(
+                "Ride request is required"
+            );
+        }
+		 if (request.getPassengerId() == null || request.getPassengerId() <= 0) {
+
+	            throw new InvalidRideRequestException(
+	                "Valid passenger ID is required"
+	            );
+	        }
+		 
+		 validateCoordinates(request.getPickupLatitude(),request.getPickupLongitude());
+
+		 validateCoordinates(request.getDestinationLatitude(),request.getDestinationLongitude());
+		        
+		 if (request.getPickupLatitude().equals(
+	                request.getDestinationLatitude()) &&
+	            request.getPickupLongitude().equals(
+	                request.getDestinationLongitude())) {
+
+	            throw new InvalidRideRequestException(
+	                "Pickup and destination cannot be the same"
+	            );
+	        }
+		 
+		 // Check passenger in Passenger Service
+	        validatePassenger(request.getPassengerId());
+
+	        Ride ride = new Ride();
+
+	        ride.setPassengerId(request.getPassengerId());
+	        ride.setPickupLatitude(request.getPickupLatitude());
+	        ride.setPickupLongitude(request.getPickupLongitude());
+	        ride.setDestinationLatitude(
+	            request.getDestinationLatitude()
+	        );
+	        ride.setDestinationLongitude(
+	            request.getDestinationLongitude()
+	        );
+
+	        ride.setRideStatus(RideStatus.REQUESTED);
+
+	        return convertToDTO(rideRepository.save(ride));
+		 
+	}
+
+	 // Helper: Validate Passenger
+    private void validatePassenger(Long passengerId) {
+
+        try {
+            Map<?, ?> passenger = passengerClient.get()
+                .uri("/api/v1/passengers/{id}", passengerId)
+                .retrieve()
+                .body(Map.class);
+
+            if (passenger == null ||
+                !"ACTIVE".equals(passenger.get("accountStatus"))) {
+
+                throw new InvalidRideRequestException(
+                    "Passenger must have an ACTIVE account"
+                );
+            }
+
+        } catch (HttpClientErrorException.NotFound ex) {
+
+            throw new InvalidRideRequestException(
+                "Passenger does not exist"
+            );
+
+        } catch (RestClientException ex) {
+
+            throw new ServiceUnavailableException(
+                "Passenger Service request failed"
+            );
+        }
+    }
+
+    // Helper: Validate Coordinates
+    private void validateCoordinates(
+            Double latitude, Double longitude) {
+
+        if (latitude == null || longitude == null ||
+            !Double.isFinite(latitude) ||
+            !Double.isFinite(longitude) ||
+            latitude < -90 || latitude > 90 ||
+            longitude < -180 || longitude > 180) {
+
+            throw new InvalidRideRequestException(
+                "Invalid latitude or longitude"
+            );
+        }
+    }
+
+    // Helper: Entity To Response DTO
+    private RideResponseDTO convertToDTO(Ride ride) {
+
+        RideResponseDTO response = new RideResponseDTO();
+
+        response.setId(ride.getId());
+        response.setPassengerId(ride.getPassengerId());
+        response.setDriverId(ride.getDriverId());
+
+        response.setPickupLatitude(
+            ride.getPickupLatitude()
+        );
+        response.setPickupLongitude(
+            ride.getPickupLongitude()
+        );
+
+        response.setDestinationLatitude(
+            ride.getDestinationLatitude()
+        );
+        response.setDestinationLongitude(
+            ride.getDestinationLongitude()
+        );
+
+        response.setRideStatus(ride.getRideStatus());
+
+        response.setRequestedAt(ride.getRequestedAt());
+        response.setAcceptedAt(ride.getAcceptedAt());
+        response.setStartedAt(ride.getStartedAt());
+        response.setCompletedAt(ride.getCompletedAt());
+        response.setCancelledAt(ride.getCancelledAt());
+
+        return response;
+    }
+    
+}

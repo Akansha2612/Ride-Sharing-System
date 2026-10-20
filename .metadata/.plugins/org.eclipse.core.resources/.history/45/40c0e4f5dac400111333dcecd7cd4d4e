@@ -1,0 +1,114 @@
+package com.ridesharing.driver.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ridesharing.driver.dto.VehicleRequestDTO;
+import com.ridesharing.driver.dto.VehicleResponseDTO;
+import com.ridesharing.driver.entity.Driver;
+import com.ridesharing.driver.entity.Driver.AvailabilityStatus;
+import com.ridesharing.driver.entity.Vehicle;
+import com.ridesharing.driver.exception.DriverNotFoundException;
+import com.ridesharing.driver.exception.DuplicateResourceException;
+import com.ridesharing.driver.exception.InvalidDriverRequestException;
+import com.ridesharing.driver.exception.VehicleNotFoundException;
+import com.ridesharing.driver.repository.DriverRepository;
+import com.ridesharing.driver.repository.VehicleRepository;
+
+@Service
+@Transactional
+public class VehicleService {
+
+	 private final VehicleRepository vehicleRepository;
+	 private final DriverRepository driverRepository;
+
+	    public VehicleService(VehicleRepository vehicleRepository, DriverRepository driverRepository) {
+	        this.vehicleRepository = vehicleRepository;
+	        this.driverRepository = driverRepository;
+	    }
+	    
+	    public VehicleResponseDTO addVehicle(Long driverId, VehicleRequestDTO request) {
+	        Driver driver = findDriver(driverId);
+	        requireOffline(driver);
+	        String number = normalizeVehicleNumber(request.getVehicleNumber());
+	        if (vehicleRepository.existsByVehicleNumber(number)) {
+	            throw new DuplicateResourceException("Vehicle number already registered");
+	        }
+	        Vehicle vehicle = new Vehicle();
+	        vehicle.setDriver(driver);
+	        copyToEntity(request, vehicle);
+	        return toResponse(vehicleRepository.save(vehicle), driverId);
+	    }
+	    
+	    @Transactional(readOnly = true)
+	    public List<VehicleResponseDTO> getVehicles(Long driverId) {
+	        findDriver(driverId);
+	        return vehicleRepository.findByDriver_Id(driverId).stream()
+	                .map(vehicle -> toResponse(vehicle, driverId)).toList();
+	    }
+
+	    @Transactional(readOnly = true)
+	    public VehicleResponseDTO getVehicle(Long driverId, Long vehicleId) {
+	        findDriver(driverId);
+	        return toResponse(findVehicle(driverId, vehicleId), driverId);
+	    }
+	    
+
+	    public VehicleResponseDTO updateVehicle(Long driverId, Long vehicleId, VehicleRequestDTO request) {
+	        Driver driver = findDriver(driverId);
+	        requireOffline(driver);
+	        Vehicle vehicle = findVehicle(driverId, vehicleId);
+	        String number = normalizeVehicleNumber(request.getVehicleNumber());
+	        if (vehicleRepository.existsByVehicleNumberAndIdNot(number, vehicleId)) {
+	            throw new DuplicateResourceException("Vehicle number already registered");
+	        }
+	        copyToEntity(request, vehicle);
+	        return toResponse(vehicleRepository.save(vehicle), driverId);
+	    }
+	    
+	    public void deleteVehicle(Long driverId, Long vehicleId) {
+	        Driver driver = findDriver(driverId);
+	        requireOffline(driver);
+	        vehicleRepository.delete(findVehicle(driverId, vehicleId));
+	    }
+	    
+	    private Driver findDriver(Long id) {
+	        return driverRepository.findById(id).orElseThrow(() -> new DriverNotFoundException(id));
+	    }
+
+	    private Vehicle findVehicle(Long driverId, Long vehicleId) {
+	        return vehicleRepository.findByIdAndDriver_Id(vehicleId, driverId)
+	                .orElseThrow(() -> new VehicleNotFoundException(vehicleId));
+	    }
+
+	    private void requireOffline(Driver driver) {
+	        if (driver.getAvailabilityStatus() != AvailabilityStatus.OFFLINE) {
+	            throw new InvalidDriverRequestException("Driver must be OFFLINE to change vehicles");
+	        }
+	    }
+	    
+	    private String normalizeVehicleNumber(String number) {
+	        return number.trim().replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
+	    }
+
+	    private void copyToEntity(VehicleRequestDTO request, Vehicle vehicle) {
+	        vehicle.setVehicleNumber(normalizeVehicleNumber(request.getVehicleNumber()));
+	        vehicle.setVehicleType(request.getVehicleType());
+	        vehicle.setModel(request.getModel().trim());
+	        vehicle.setColor(request.getColor().trim());
+	    }
+
+	    private VehicleResponseDTO toResponse(Vehicle vehicle, Long driverId) {
+	        VehicleResponseDTO dto = new VehicleResponseDTO();
+	        dto.setId(vehicle.getId());
+	        dto.setDriverId(driverId);
+	        dto.setVehicleNumber(vehicle.getVehicleNumber());
+	        dto.setVehicleType(vehicle.getVehicleType());
+	        dto.setModel(vehicle.getModel());
+	        dto.setColor(vehicle.getColor());
+	        return dto;
+	    }
+	    
+}

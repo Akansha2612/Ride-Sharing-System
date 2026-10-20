@@ -1,0 +1,42 @@
+package com.ridesharing.driver.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.ridesharing.driver.entity.Driver;
+import com.ridesharing.driver.entity.Driver.AccountStatus;
+import com.ridesharing.driver.entity.Driver.AvailabilityStatus;
+import com.ridesharing.driver.entity.Driver.VerificationStatus;
+
+@Repository
+public interface DriverRepository extends JpaRepository<Driver, Long> {
+
+	// Find driver by email
+    Optional<Driver> findByEmail(String email);
+
+    // Find drivers by phone number
+    List<Driver> findByPhone(String phone);
+
+    // Check duplicate email during registration
+    boolean existsByEmail(String email);
+
+    // Check duplicate email during update
+    boolean existsByEmailAndIdNot(String email, Long id);
+
+    // Check duplicate license during registration
+    boolean existsByLicenseNumber(String licenseNumber);
+
+    // Check duplicate license during update
+    boolean existsByLicenseNumberAndIdNot(
+            String licenseNumber, Long id);
+
+    // Find drivers eligible for nearby search
+    List<Driver> findByAccountStatusAndAvailabilityStatusAndVerificationStatus(
+            AccountStatus accountStatus,
+            AvailabilityStatus availabilityStatus,
+            VerificationStatus verificationStatus);
+    
+}

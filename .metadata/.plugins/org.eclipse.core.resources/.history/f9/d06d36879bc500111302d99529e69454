@@ -1,0 +1,15 @@
+package com.ridesharing.ride.service;
+
+import com.ridesharing.ride.controller.RideResponseDTO;
+import com.ridesharing.ride.dto.RideRequestDTO;
+
+import jakarta.validation.Valid;
+
+public class RideService {
+
+	public RideResponseDTO requestRide(@Valid RideRequestDTO request) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

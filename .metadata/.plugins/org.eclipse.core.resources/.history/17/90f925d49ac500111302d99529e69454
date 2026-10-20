@@ -1,0 +1,5 @@
+package com.ridesharing.ride.controller;
+
+public class RideController {
+
+}

@@ -1,0 +1,5 @@
+package com.ridesharing.driver.exception;
+
+public class DriverNotFoundException {
+
+}

@@ -1,0 +1,200 @@
+package com.ridesharing.driver.service;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
+
+import org.springframework.stereotype.Service;
+
+import com.ridesharing.driver.dto.DriverRequestDTO;
+import com.ridesharing.driver.dto.DriverResponseDTO;
+import com.ridesharing.driver.entity.Driver;
+import com.ridesharing.driver.entity.Driver.AccountStatus;
+import com.ridesharing.driver.entity.Driver.AvailabilityStatus;
+import com.ridesharing.driver.entity.Driver.VerificationStatus;
+import com.ridesharing.driver.repository.DriverRepository;
+import com.ridesharing.driver.repository.VehicleRepository;
+import com.ridesharing.driver.exception.*;
+
+@Service
+public class DriverService {
+
+	private final DriverRepository driverRepository;
+    private final VehicleRepository vehicleRepository;
+
+    public DriverService(
+            DriverRepository driverRepository,
+            VehicleRepository vehicleRepository) {
+
+        this.driverRepository = driverRepository;
+        this.vehicleRepository = vehicleRepository;
+    }
+
+    // 1. Register Driver
+    public DriverResponseDTO registerDriver(
+            DriverRequestDTO request) {
+
+        String email = normalizeEmail(request.getEmail());
+        String license = normalizeLicense(
+            request.getLicenseNumber()
+        );
+
+        if (driverRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException(
+                "Email already registered"
+            );
+        }
+
+        if (driverRepository.existsByLicenseNumber(license)) {
+            throw new DuplicateResourceException(
+                "License already registered"
+            );
+        }
+
+        Driver driver = new Driver();
+        copyToEntity(request, driver);
+
+        driver.setAccountStatus(AccountStatus.ACTIVE);
+        driver.setAvailabilityStatus(AvailabilityStatus.OFFLINE);
+        driver.setVerificationStatus(VerificationStatus.PENDING);
+
+        return convertToDTO(driverRepository.save(driver));
+    }
+    
+    // 2. Get Driver By ID
+    @Transactional(readOnly = true)
+    public DriverResponseDTO getDriverById(Long id) {
+        return convertToDTO(findDriver(id));
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<DriverResponseDTO> getAllDrivers(int page, int size) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new InvalidDriverRequestException("Page must be >= 0, size between 1 and 100");
+        }
+        return driverRepository.findAll(PageRequest.of(page, size, Sort.by("id").ascending()))
+                .map(this::convertToDTO);
+    }
+    
+    
+    // Helper: Find Driver Entity
+    private Driver findDriver(Long id) {
+
+        return driverRepository.findById(id)
+            .orElseThrow(() ->
+                new DriverNotFoundException(id)
+            );
+    }
+
+    // Helper: Normalize Email
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    // Helper: Normalize License
+    private String normalizeLicense(String license) {
+        return license.trim().toUpperCase(Locale.ROOT);
+    }
+
+    // Helper: Validate Coordinates
+    private void validateCoordinates(
+            Double latitude, Double longitude) {
+
+        if (latitude == null || longitude == null ||
+                !Double.isFinite(latitude) ||
+                !Double.isFinite(longitude) ||
+                latitude < -90 || latitude > 90 ||
+                longitude < -180 || longitude > 180) {
+
+            throw new InvalidDriverRequestException(
+                "Invalid latitude or longitude"
+            );
+        }
+    }
+    
+    /*How availability works
+    A driver is allowed to go ONLINE only when their account is ACTIVE, their verification status is VERIFIED, they have at least one registered vehicle, and their location was updated within the last 10 minutes.
+    The ON_RIDE state is reserved for future Ride Microservice integration. A separate atomic driver-reservation operation will be necessary to prevent two rides from selecting the same driver simultaneously.
+    */
+    // Helper: Recent GPS Location
+    private boolean hasRecentLocation(Driver driver) {
+
+        return driver.getLatitude() != null &&
+            driver.getLongitude() != null &&
+            driver.getLocationUpdatedAt() != null &&
+            driver.getLocationUpdatedAt().isAfter(
+                Instant.now().minus(10, ChronoUnit.MINUTES)
+            );
+    }
+
+    // Haversine Distance Calculation (km)
+    private double calculateDistance(
+            double lat1, double lon1,
+            double lat2, double lon2) {
+
+        double latDiff = Math.toRadians(lat2 - lat1);
+        double lonDiff = Math.toRadians(lon2 - lon1);
+
+        double a = Math.pow(Math.sin(latDiff / 2), 2)
+            + Math.cos(Math.toRadians(lat1))
+            * Math.cos(Math.toRadians(lat2))
+            * Math.pow(Math.sin(lonDiff / 2), 2);
+
+        a = Math.max(0, Math.min(1, a));
+
+        double distance = 6371.0088 * 2 *
+            Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return Math.round(distance * 100.0) / 100.0;
+    }
+
+    // Helper: Request DTO To Entity
+    private void copyToEntity(
+            DriverRequestDTO request, Driver driver) {
+
+        driver.setName(request.getName().trim());
+        driver.setEmail(normalizeEmail(request.getEmail()));
+        driver.setPhone(request.getPhone().trim());
+        driver.setLicenseNumber(
+            normalizeLicense(request.getLicenseNumber())
+        );
+
+        Double latitude = request.getLatitude();
+        Double longitude = request.getLongitude();
+
+        if (latitude != null || longitude != null) {
+            validateCoordinates(latitude, longitude);
+
+            driver.setLatitude(latitude);
+            driver.setLongitude(longitude);
+            driver.setLocationUpdatedAt(Instant.now());
+        }
+    }
+
+    // Helper: Entity To Response DTO
+    private DriverResponseDTO convertToDTO(Driver driver) {
+
+        DriverResponseDTO response = new DriverResponseDTO();
+
+        response.setId(driver.getId());
+        response.setName(driver.getName());
+        response.setEmail(driver.getEmail());
+        response.setPhone(driver.getPhone());
+
+        response.setLatitude(driver.getLatitude());
+        response.setLongitude(driver.getLongitude());
+        response.setLocationUpdatedAt(
+            driver.getLocationUpdatedAt()
+        );
+
+        response.setAccountStatus(driver.getAccountStatus());
+        response.setAvailabilityStatus(
+            driver.getAvailabilityStatus()
+        );
+        response.setVerificationStatus(
+            driver.getVerificationStatus()
+        );
+
+        return response;
+    }
+}

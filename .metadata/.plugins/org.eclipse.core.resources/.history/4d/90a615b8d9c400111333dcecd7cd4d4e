@@ -1,0 +1,5 @@
+package com.ridesharing.driver.service;
+
+public class VehicleService {
+
+}

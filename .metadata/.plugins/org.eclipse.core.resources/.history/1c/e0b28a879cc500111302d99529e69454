@@ -1,0 +1,106 @@
+package com.ridesharing.ride.dto;
+
+public class RideResponseDTO {
+
+		private Long id;
+	    private Long passengerId;
+	    private Long driverId;
+
+	    private Double pickupLatitude;
+	    private Double pickupLongitude;
+
+	    private Double destinationLatitude;
+	    private Double destinationLongitude;
+
+	    private RideStatus rideStatus;
+
+	    private Instant requestedAt;
+	    private Instant acceptedAt;
+	    private Instant startedAt;
+	    private Instant completedAt;
+	    private Instant cancelledAt;
+		public RideResponseDTO() {
+			super();
+			// TODO Auto-generated constructor stub
+		}
+		public Long getId() {
+			return id;
+		}
+		public void setId(Long id) {
+			this.id = id;
+		}
+		public Long getPassengerId() {
+			return passengerId;
+		}
+		public void setPassengerId(Long passengerId) {
+			this.passengerId = passengerId;
+		}
+		public Long getDriverId() {
+			return driverId;
+		}
+		public void setDriverId(Long driverId) {
+			this.driverId = driverId;
+		}
+		public Double getPickupLatitude() {
+			return pickupLatitude;
+		}
+		public void setPickupLatitude(Double pickupLatitude) {
+			this.pickupLatitude = pickupLatitude;
+		}
+		public Double getPickupLongitude() {
+			return pickupLongitude;
+		}
+		public void setPickupLongitude(Double pickupLongitude) {
+			this.pickupLongitude = pickupLongitude;
+		}
+		public Double getDestinationLatitude() {
+			return destinationLatitude;
+		}
+		public void setDestinationLatitude(Double destinationLatitude) {
+			this.destinationLatitude = destinationLatitude;
+		}
+		public Double getDestinationLongitude() {
+			return destinationLongitude;
+		}
+		public void setDestinationLongitude(Double destinationLongitude) {
+			this.destinationLongitude = destinationLongitude;
+		}
+		public RideStatus getRideStatus() {
+			return rideStatus;
+		}
+		public void setRideStatus(RideStatus rideStatus) {
+			this.rideStatus = rideStatus;
+		}
+		public Instant getRequestedAt() {
+			return requestedAt;
+		}
+		public void setRequestedAt(Instant requestedAt) {
+			this.requestedAt = requestedAt;
+		}
+		public Instant getAcceptedAt() {
+			return acceptedAt;
+		}
+		public void setAcceptedAt(Instant acceptedAt) {
+			this.acceptedAt = acceptedAt;
+		}
+		public Instant getStartedAt() {
+			return startedAt;
+		}
+		public void setStartedAt(Instant startedAt) {
+			this.startedAt = startedAt;
+		}
+		public Instant getCompletedAt() {
+			return completedAt;
+		}
+		public void setCompletedAt(Instant completedAt) {
+			this.completedAt = completedAt;
+		}
+		public Instant getCancelledAt() {
+			return cancelledAt;
+		}
+		public void setCancelledAt(Instant cancelledAt) {
+			this.cancelledAt = cancelledAt;
+		}
+	
+	    
+}

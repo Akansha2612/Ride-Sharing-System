@@ -1,0 +1,117 @@
+package com.ridesharing.ride.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+
+import com.ridesharing.ride.exception.RideConflictException;
+import com.ridesharing.ride.exception.ServiceUnavailableException;
+
+@Component
+public class DriverClient {
+
+	private final RestClient restClient;
+	 
+	public DriverClient(
+            RestClient.Builder restClientBuilder,
+            @Value("${services.driver.url}") String driverUrl) {
+
+        this.restClient = restClientBuilder.clone()
+                .baseUrl(driverUrl)
+                .build();
+    }
+	
+	 // 1. Search nearby eligible drivers
+    public List<Map<String, Object>> findNearbyDrivers(
+            Double latitude,
+            Double longitude,
+            double radiusKm) {
+
+        try {
+            List<Map<String, Object>> drivers =
+                restClient.get()
+                    .uri(builder -> builder
+                        .path("/api/v1/drivers/nearby")
+                        .queryParam("latitude", latitude)
+                        .queryParam("longitude", longitude)
+                        .queryParam("radiusKm", radiusKm)
+                        .build())
+                    .retrieve()
+                    .body(
+                        new ParameterizedTypeReference<
+                            List<Map<String, Object>>>() {}
+                    );
+
+            return drivers == null ? List.of() : drivers;
+
+        } catch (RestClientException ex) {
+
+            throw new ServiceUnavailableException(
+                "Unable to search nearby drivers"
+            );
+        }
+    }
+
+    // 2. Reserve a driver for a particular ride
+    public boolean reserveDriver(
+            Long driverId, Long rideId) {
+
+        try {
+            restClient.post()
+                .uri(
+                    "/api/v1/drivers/{id}/reserve?rideId={rideId}",
+                    driverId,
+                    rideId
+                )
+                .retrieve()
+                .toBodilessEntity();
+
+            return true;
+
+        } catch (HttpClientErrorException.Conflict ex) {
+
+            // Already reserved or no longer available
+            return false;
+
+        } catch (RestClientException ex) {
+
+            throw new ServiceUnavailableException(
+                "Driver reservation request failed"
+            );
+        }
+    }
+
+    // 3. Release a driver belonging to a ride
+    public void releaseDriver(
+            Long driverId, Long rideId) {
+
+        try {
+            restClient.patch()
+                .uri(
+                    "/api/v1/drivers/{id}/release?rideId={rideId}",
+                    driverId,
+                    rideId
+                )
+                .retrieve()
+                .toBodilessEntity();
+
+        } catch (HttpClientErrorException.Conflict ex) {
+
+            throw new RideConflictException(
+                "Driver is not reserved for this ride"
+            );
+
+        } catch (RestClientException ex) {
+
+            throw new ServiceUnavailableException(
+                "Driver release request failed"
+            );
+        }
+    }
+}

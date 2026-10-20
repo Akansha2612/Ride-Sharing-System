@@ -1,0 +1,139 @@
+package com.ridesharing.passenger.Entity;
+
+import java.time.Instant;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+@Entity
+@Table(name = "passengers")
+public class Passenger {
+	
+	// Account status enum inside Passenger class
+    public enum AccountStatus {
+        ACTIVE,
+        INACTIVE,
+        BLOCKED
+    }
+    
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String name;
+
+    @Email
+    @NotBlank
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String phone;
+
+ // Passenger's latest known location
+    private Double latitude;
+
+    private Double longitude;
+
+    @Column(name = "location_updated_at")
+    private Instant locationUpdatedAt;
+
+    // Passenger account status
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false, length = 20)
+    private PassengerAccountStatus accountStatus =
+            PassengerAccountStatus.ACTIVE;
+
+  
+
+    @PrePersist
+    public void onCreate() {
+        if (accountStatus == null) {
+            accountStatus = PassengerAccountStatus.ACTIVE;
+        }
+    }
+
+	public Passenger() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public Passenger(Long id, @NotBlank String name, @Email @NotBlank String email, @NotBlank String phone) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.email = email;
+		this.phone = phone;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	public Double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+
+	public Instant getLocationUpdatedAt() {
+		return locationUpdatedAt;
+	}
+
+	public void setLocationUpdatedAt(Instant locationUpdatedAt) {
+		this.locationUpdatedAt = locationUpdatedAt;
+	}
+
+	
+    
+}

@@ -1,0 +1,5 @@
+package com.ridesharing.passenger.Entity;
+
+public enum PassengerAccountStatus {
+
+}

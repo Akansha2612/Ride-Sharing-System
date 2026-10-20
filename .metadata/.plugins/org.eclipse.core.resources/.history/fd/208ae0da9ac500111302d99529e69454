@@ -1,0 +1,5 @@
+package com.ridesharing.ride.service;
+
+public class RideService {
+
+}

@@ -1,0 +1,59 @@
+package com.ridesharing.driver.service;
+
+import org.springframework.stereotype.Service;
+
+import com.ridesharing.driver.dto.DriverRequestDTO;
+import com.ridesharing.driver.dto.DriverResponseDTO;
+import com.ridesharing.driver.entity.Driver;
+import com.ridesharing.driver.entity.Driver.AccountStatus;
+import com.ridesharing.driver.entity.Driver.AvailabilityStatus;
+import com.ridesharing.driver.entity.Driver.VerificationStatus;
+import com.ridesharing.driver.repository.DriverRepository;
+
+@Service
+public class DriverService {
+
+	private final DriverRepository driverRepository;
+    private final VehicleRepository vehicleRepository;
+
+    public DriverService(
+            DriverRepository driverRepository,
+            VehicleRepository vehicleRepository) {
+
+        this.driverRepository = driverRepository;
+        this.vehicleRepository = vehicleRepository;
+    }
+
+    // 1. Register Driver
+    public DriverResponseDTO registerDriver(
+            DriverRequestDTO request) {
+
+        String email = normalizeEmail(request.getEmail());
+        String license = normalizeLicense(
+            request.getLicenseNumber()
+        );
+
+        if (driverRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException(
+                "Email already registered"
+            );
+        }
+
+        if (driverRepository.existsByLicenseNumber(license)) {
+            throw new DuplicateResourceException(
+                "License already registered"
+            );
+        }
+
+        Driver driver = new Driver();
+        copyToEntity(request, driver);
+
+        driver.setAccountStatus(AccountStatus.ACTIVE);
+        driver.setAvailabilityStatus(AvailabilityStatus.OFFLINE);
+        driver.setVerificationStatus(VerificationStatus.PENDING);
+
+        return convertToDTO(driverRepository.save(driver));
+    }
+    
+    
+}

@@ -1,0 +1,8 @@
+package com.ridesharing.passenger.Entity;
+
+public enum PassengerAccountStatus {
+
+	ACTIVE,
+    INACTIVE,
+    BLOCKED
+}

@@ -1,0 +1,261 @@
+
+# Driver Microservice — Ride Sharing System
+
+## 1. Project Overview
+
+Driver Microservice manages:
+- Driver registration and profile management
+- Driver account status
+- Driver verification
+- Driver availability
+- Driver GPS location
+- Nearby driver searching
+- Vehicle registration and management
+
+## 2. Technology Stack
+
+- Java 17
+- Spring Boot
+- Spring Data JPA
+- PostgreSQL
+- Maven
+- Eclipse IDE
+- Postman
+
+## 3. Application Configuration
+
+Application Port: 8082
+
+Database: driver_db
+
+Base URL:
+http://localhost:8082/api/v1/drivers
+
+## 4. How to Run
+
+1. Start PostgreSQL.
+2. Ensure driver_db exists.
+3. Configure the DB_PASSWORD environment variable.
+4. Open driver-service in Eclipse.
+5. Run DriverServiceApplication.java.
+6. Verify the service starts on port 8082.
+
+## 5. Driver API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/drivers | Register driver |
+| GET | /api/v1/drivers | Get all drivers |
+| GET | /api/v1/drivers/{id} | Get driver by ID |
+| PUT | /api/v1/drivers/{id} | Update driver |
+| DELETE | /api/v1/drivers/{id} | Delete driver |
+| GET | /api/v1/drivers/search | Search driver |
+| PATCH | /api/v1/drivers/{id}/location | Update location |
+| PATCH | /api/v1/drivers/{id}/availability | Update availability |
+| PATCH | /api/v1/drivers/{id}/account-status | Update account status |
+| PATCH | /api/v1/drivers/{id}/verification | Verify driver |
+| GET | /api/v1/drivers/nearby | Search nearby drivers |
+
+## 6. Vehicle API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/drivers/{id}/vehicles | Register vehicle |
+| GET | /api/v1/drivers/{id}/vehicles | Get vehicles |
+| GET | /api/v1/drivers/{id}/vehicles/{vehicleId} | Get vehicle |
+| PUT | /api/v1/drivers/{id}/vehicles/{vehicleId} | Update vehicle |
+| DELETE | /api/v1/drivers/{id}/vehicles/{vehicleId} | Delete vehicle |
+
+## 7. Postman Testing
+
+### Test 1: Register Driver
+
+Method: POST
+
+URL:
+http://localhost:8082/api/v1/drivers
+
+Request Body:
+```json
+{
+  "name": "Rahul Sharma",
+  "email": "rahul.driver@example.com",
+  "phone": "9876543210",
+  "licenseNumber": "DL0420260012345",
+  "latitude": 28.7041,
+  "longitude": 77.1025
+}
+```
+
+Expected:
+- HTTP 201 Created
+- accountStatus = ACTIVE
+- availabilityStatus = OFFLINE
+- verificationStatus = PENDING
+
+Save the generated driver ID for later tests.
+
+### Test 2: Get Driver By ID
+
+Method: GET
+
+URL:
+http://localhost:8082/api/v1/drivers/1
+
+Expected: HTTP 200 OK
+
+### Test 3: Get All Drivers
+
+Method: GET
+
+URL:
+http://localhost:8082/api/v1/drivers?page=0&size=10
+
+Expected: HTTP 200 OK
+
+### Test 4: Search By Email
+
+Method: GET
+
+URL:
+http://localhost:8082/api/v1/drivers/search?email=rahul.driver@example.com
+
+Expected: HTTP 200 OK
+
+### Test 5: Register Vehicle
+
+Method: POST
+
+URL:
+http://localhost:8082/api/v1/drivers/1/vehicles
+
+Request Body:
+```json
+{
+  "vehicleNumber": "DL01AB1234",
+  "vehicleType": "CAR",
+  "model": "Maruti Suzuki Dzire",
+  "color": "White"
+}
+```
+
+Expected: HTTP 201 Created
+
+### Test 6: Verify Driver
+
+Method: PATCH
+
+URL:
+http://localhost:8082/api/v1/drivers/1/verification?status=VERIFIED
+
+Expected:
+- HTTP 200 OK
+- verificationStatus = VERIFIED
+
+### Test 7: Update Driver Location
+
+Method: PATCH
+
+URL:
+http://localhost:8082/api/v1/drivers/1/location
+
+Request Body:
+```json
+{
+  "latitude": 28.7041,
+  "longitude": 77.1025
+}
+```
+
+Expected:
+- HTTP 200 OK
+- New locationUpdatedAt timestamp
+
+### Test 8: Make Driver ONLINE
+
+Method: PATCH
+
+URL:
+http://localhost:8082/api/v1/drivers/1/availability?status=ONLINE
+
+Expected:
+- HTTP 200 OK
+- availabilityStatus = ONLINE
+
+Prerequisites:
+- ACTIVE account
+- VERIFIED driver
+- Registered vehicle
+- Recent GPS update
+
+### Test 9: Nearby Drivers
+
+Method: GET
+
+URL:
+http://localhost:8082/api/v1/drivers/nearby?latitude=28.7041&longitude=77.1025&radiusKm=5
+
+Expected:
+- HTTP 200 OK
+- List of eligible nearby drivers
+- distanceKm included in each result
+
+### Test 10: Block Driver
+
+Method: PATCH
+
+URL:
+http://localhost:8082/api/v1/drivers/1/account-status?status=BLOCKED
+
+Expected:
+- HTTP 200 OK
+- accountStatus = BLOCKED
+- availabilityStatus = OFFLINE
+
+## 8. Negative Test Cases
+
+| Test | Expected Status |
+|------|-----------------|
+| Duplicate email | 409 Conflict |
+| Duplicate license number | 409 Conflict |
+| Invalid email | 400 Bad Request |
+| Invalid phone number | 400 Bad Request |
+| Invalid latitude | 400 Bad Request |
+| Missing driver ID | 404 Not Found |
+| Invalid search radius | 400 Bad Request |
+| ONLINE without verification | 400 Bad Request |
+| Duplicate vehicle number | 409 Conflict |
+
+## 9. PostgreSQL Verification
+
+Check registered drivers:
+
+```sql
+SELECT * FROM drivers;
+```
+
+Check registered vehicles:
+
+```sql
+SELECT * FROM vehicles;
+```
+
+## 10. Important Development Notes
+
+- Driver registration defaults to ACTIVE, OFFLINE, PENDING.
+- Driver must be VERIFIED before becoming ONLINE.
+- Driver requires at least one vehicle.
+- GPS location must have been updated within 10 minutes.
+- Nearby searching uses the Haversine formula.
+- ON_RIDE will be handled by the future Ride Microservice.
+- Account and verification status endpoints require admin authorization before production use.
+- Protect driver contact information and exact location with authentication and authorization.
+
+## 11. Next Development Steps
+
+- Add automated integration tests
+- Add authentication and authorization
+- Add Flyway migrations
+- Add driver assignment/reservation API
+- Integrate with Ride Microservice
+```

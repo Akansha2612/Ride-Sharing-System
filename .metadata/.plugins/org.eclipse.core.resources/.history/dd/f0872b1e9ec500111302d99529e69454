@@ -1,0 +1,57 @@
+package com.ridesharing.ride.service;
+
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+import com.ridesharing.ride.exception.InvalidRideRequestException;
+
+@Component
+public class PassengerClient {
+	private final RestClient restClient;
+
+    // Constructor
+    public PassengerClient(
+            RestClient.Builder restClientBuilder,
+            @Value("${services.passenger.url}") String passengerUrl) {
+
+        this.restClient = restClientBuilder
+                .baseUrl(passengerUrl)
+                .build();
+    }
+    
+ // 1. Get Passenger By ID
+    public Map<?, ?> getPassengerById(Long passengerId) {
+
+        if (passengerId == null || passengerId <= 0) {
+            throw new InvalidRideRequestException(
+                "Valid passenger ID is required"
+            );
+        }
+
+        try {
+
+            return restClient.get()
+                .uri("/api/v1/passengers/{id}", passengerId)
+                .retrieve()
+                .body(Map.class);
+
+        } catch (HttpClientErrorException.NotFound ex) {
+
+            throw new InvalidRideRequestException(
+                "Passenger not found with ID: " + passengerId
+            );
+
+        } catch (RestClientException ex) {
+
+            throw new ServiceUnavailableException(
+                "Passenger Service request failed"
+            );
+        }
+    }
+
+    
+    
+}

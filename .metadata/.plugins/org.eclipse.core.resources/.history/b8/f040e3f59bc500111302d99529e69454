@@ -1,0 +1,26 @@
+package com.ridesharing.ride.service;
+
+import org.springframework.stereotype.Service;
+
+import com.ridesharing.ride.controller.RideResponseDTO;
+import com.ridesharing.ride.dto.RideRequestDTO;
+import com.ridesharing.ride.repository.RideRepository;
+
+import jakarta.validation.Valid;
+
+@Service
+public class RideService {
+
+	private final RideRepository rideRepository;
+	 
+	 public RideService(RideRepository rideRepository) {
+	    this.rideRepository = rideRepository;
+	    
+	    }
+	 
+	public RideResponseDTO requestRide(@Valid RideRequestDTO request) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

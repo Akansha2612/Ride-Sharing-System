@@ -1,0 +1,37 @@
+
+server:
+  port: 9090
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+
+            # 1. Passenger Microservice
+            - id: passenger-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/passengers,/api/v1/passengers/**
+
+            # 2. Driver Microservice
+            - id: driver-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/drivers,/api/v1/drivers/**
+
+            # 3. Ride Microservice
+            - id: ride-service
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/v1/rides,/api/v1/rides/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

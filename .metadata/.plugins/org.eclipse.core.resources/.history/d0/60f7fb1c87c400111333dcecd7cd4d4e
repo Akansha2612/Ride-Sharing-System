@@ -1,0 +1,10 @@
+package com.ridesharing.passenger.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.ridesharing.passenger.Entity.Passenger;
+
+@Repository
+public interface PassengerRepository extends JpaRepository<Passenger, Long> {
+
+}

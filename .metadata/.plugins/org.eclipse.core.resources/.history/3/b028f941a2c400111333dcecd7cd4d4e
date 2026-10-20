@@ -1,0 +1,83 @@
+package com.ridesharing.passenger.service;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.ridesharing.passenger.Entity.Passenger;
+import com.ridesharing.passenger.dto.PassengerRequestDTO;
+import com.ridesharing.passenger.repository.PassengerRepository;
+
+@Service
+public class PassengerService {
+
+	 private final PassengerRepository repository;
+
+	    public PassengerService(PassengerRepository repository) {
+	        this.repository = repository;
+	    }
+
+	    public Passenger registerPassenger( PassengerRequestDTO request) {
+	    	String email = normalizeEmail(request.getEmail());
+
+	        if (repository.existsByEmail(email)) {
+	            throw new DuplicatePassengerException(email);
+	        }
+
+	        Passenger passenger = new Passenger();
+
+	        copyToEntity(request, passenger);
+
+	        Passenger savedPassenger = repository.save(passenger);
+
+	        return convertToDTO(savedPassenger);
+	    }
+
+	    public List<Passenger> getAllPassengers() {
+	        return repository.findAll();
+	    }
+	    
+	 // Get Passenger By ID
+	    public Passenger getPassengerById(Long id) {
+	    	Passenger passenger = findPassenger(id);
+
+	        return convertToDTO(passenger);
+	    }
+
+	    // Update Passenger
+	    public Passenger updatePassenger( Long id, PassengerRequestDTO request) {
+	        Passenger passenger = findPassenger(id);
+
+	        String email = normalizeEmail(request.getEmail());
+
+	        if (repository.existsByEmailAndIdNot(email, id)) {
+	            throw new DuplicatePassengerException(email);
+	        }
+
+	        copyToEntity(request, passenger);
+
+	        Passenger updatedPassenger = repository.save(passenger);
+
+	        return convertToDTO(updatedPassenger);
+	    }
+
+	    // Delete Passenger
+	    public void deletePassenger(Long id) {
+	    	 Passenger passenger = findPassenger(id);
+
+	         repository.delete(passenger);
+	    }
+	    
+	    // Helper: Find Passenger Entity
+	    private Passenger findPassenger(Long id) {
+
+	        return repository.findById(id)
+	                .orElseThrow(() ->
+	                    new PassengerNotFoundException(id)
+	                );
+	    }
+	    
+	    
+}

@@ -1,0 +1,5 @@
+package com.ridesharing.passenger.service;
+
+public class PassengerService {
+
+}

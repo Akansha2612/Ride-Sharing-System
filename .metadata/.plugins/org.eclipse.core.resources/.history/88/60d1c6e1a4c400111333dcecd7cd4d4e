@@ -1,0 +1,5 @@
+package com.ridesharing.passenger.exception;
+
+public class DuplicatePassengerException {
+
+}

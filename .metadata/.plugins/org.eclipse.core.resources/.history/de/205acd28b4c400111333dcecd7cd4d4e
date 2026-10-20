@@ -1,0 +1,42 @@
+package com.ridesharing.passenger.dto;
+
+import jakarta.validation.constraints.NotNull;
+
+public class PassengerLocationRequestDTO {
+
+	  @NotNull(message = "Latitude is required")
+	    private Double latitude;
+
+	  @NotNull(message = "Longitude is required")
+	    private Double longitude;
+
+	public PassengerLocationRequestDTO(@NotNull(message = "Latitude is required") Double latitude,
+			@NotNull(message = "Longitude is required") Double longitude) {
+		super();
+		this.latitude = latitude;
+		this.longitude = longitude;
+	}
+
+	public PassengerLocationRequestDTO() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	public Double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+	    
+	    
+}

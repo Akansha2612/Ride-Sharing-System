@@ -1,0 +1,22 @@
+package com.ridesharing.ride.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+@Component
+public class DriverClient {
+
+	private final RestClient restClient;
+	 
+	public DriverClient(
+            RestClient.Builder restClientBuilder,
+            @Value("${services.driver.url}") String driverUrl) {
+
+        this.restClient = restClientBuilder.clone()
+                .baseUrl(driverUrl)
+                .build();
+    }
+	
+	
+}

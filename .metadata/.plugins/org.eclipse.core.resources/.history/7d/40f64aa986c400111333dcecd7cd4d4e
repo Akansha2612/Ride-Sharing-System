@@ -1,0 +1,5 @@
+package com.ridesharing.passenger.controller;
+
+public class PassengerController {
+
+}

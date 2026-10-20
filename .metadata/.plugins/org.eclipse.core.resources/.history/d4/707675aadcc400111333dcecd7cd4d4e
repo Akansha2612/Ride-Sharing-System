@@ -1,0 +1,10 @@
+spring.application.name=driver-service
+server.port=8082
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/driver_db
+spring.datasource.username=driver_user
+spring.datasource.password=${DB_PASSWORD}
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.open-in-view=false

@@ -1,0 +1,99 @@
+package com.ridesharing.passenger.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import com.ridesharing.passenger.Entity.Passenger;
+import com.ridesharing.passenger.Entity.Passenger.AccountStatus;
+import com.ridesharing.passenger.dto.PassengerRequestDTO;
+import com.ridesharing.passenger.dto.PassengerResponseDTO;
+import com.ridesharing.passenger.service.PassengerService;
+
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/v1/passengers")
+public class PassengerController {
+
+	private final PassengerService service;
+
+    public PassengerController(PassengerService service) {
+        this.service = service;
+    }
+    
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public PassengerResponseDTO  register(@Valid @RequestBody PassengerRequestDTO request) {
+        return service.registerPassenger(request);
+    }
+
+ // 2. Get All Passengers With Pagination
+    @GetMapping
+    public Page<PassengerResponseDTO> getAllPassengers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return service.getAllPassengers(page, size);
+    }
+    
+ // 3. Get Passenger By ID
+    @GetMapping("/{id}")
+    public PassengerResponseDTO getPassengerById(
+            @PathVariable Long id) {
+
+        return service.getPassengerById(id);
+    }
+    
+    @PutMapping("/{id}")
+    public PassengerResponseDTO updatePassenger(
+            @PathVariable Long id,
+            @Valid @RequestBody PassengerRequestDTO request) {
+
+        return service.updatePassenger(id, request);
+    }
+    
+    // 5. Delete Passenger
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePassenger(@PathVariable Long id) {
+
+    	service.deletePassenger(id);
+    }
+    
+    // 7. Update Passenger Location
+    @PatchMapping("/{id}/location")
+    public PassengerResponseDTO updateLocation(
+            @PathVariable Long id,
+            @RequestBody Map<String, Double> location) {
+
+        return service.updatePassengerLocation(
+            id,
+            location.get("latitude"),
+            location.get("longitude")
+        );
+    }
+    
+    // 8. Update Passenger Status
+    // Development only: protect this endpoint with admin authorization.
+    @PatchMapping("/{id}/status")
+    public PassengerResponseDTO updateStatus(
+            @PathVariable Long id,
+            @RequestParam AccountStatus status) {
+
+        return service.updatePassengerStatus(id, status);
+    }
+    
+}
